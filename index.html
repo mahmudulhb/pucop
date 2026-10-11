@@ -19,195 +19,132 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700;800&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="preload side-collapsed">
 
-<!-- Loading screen -->
-<div id="loading-screen">
-  <img src="logo.png" alt="PUCOP Logo" class="loading-logo">
-  <div class="loading-text">PUCOP</div>
-  <div class="loading-subtext">Academic Tools Suite</div>
-  <div class="loading-spinner"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>
-</div>
-
-<!-- Header -->
-<header>
-  <div class="header-left">
-    <img src="logo.png" alt="PUCOP Logo" class="header-logo">
-    <div class="header-texts">
-      <span class="header-title">PUCOP</span>
-      <span class="header-subtitle">Academic Tools Suite</span>
-    </div>
-  </div>
-  <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
-  <div class="nav-overlay" id="navOverlay"></div>
-  <nav class="header-nav" id="headerNav">
-    <ul class="nav-list">
-      <li class="nav-item active" data-tool="cover"><a href="#cover" class="nav-link">Cover Page Maker</a></li>
-      <li class="nav-item" data-tool="cgpa"><a href="#cgpa" class="nav-link">CGPA Calculator</a></li>
-    </ul>
+<aside class="sidebar" id="sidebar">
+  <a class="side-brand" href="#cover" aria-label="PUCOP home" title="PUCOP"><span class="tile"><img src="logo.png" alt="PUCOP" class="side-logo"></span><span class="brand-name"><b>PUCOP</b><small>Student tools</small></span></a>
+  <nav class="side-nav" id="headerNav" role="tablist" aria-orientation="vertical" aria-label="Tools">
+    <span class="side-pill" aria-hidden="true"></span>
+    <a class="side-item active" role="tab" aria-selected="true" data-tool="cover" href="#cover" title="Cover page"><i class="fas fa-file-lines"></i><span class="tab-label">Cover page</span><em class="tab-meta" id="tabCoverMeta"></em></a>
+    <a class="side-item" role="tab" aria-selected="false" data-tool="cgpa" href="#cgpa" title="CGPA calculator"><i class="fas fa-graduation-cap"></i><span class="tab-label">CGPA calculator</span><em class="tab-meta" id="tabCgpaMeta"></em></a>
   </nav>
-</header>
+</aside>
+<div class="topbar"><button class="menu-btn" id="menuBtn" type="button" aria-label="Open menu"><i class="fas fa-bars"></i></button><img src="logo.png" alt="" class="top-logo"><b id="topTitle">Cover page</b></div>
+<div class="side-scrim" id="sideScrim"></div>
 
 <main>
-<!-- ===================== TOOL 1: COVER PAGE MAKER ===================== -->
-<section id="tool-cover" class="tool cover-maker-container">
+<section id="tool-cover" class="tool cover-maker-container" data-pane="edit">
   <div class="form-container">
-    <h2><i class="fas fa-edit"></i> Enter Your Information</h2>
+    <h2>Cover details <span id="progText"></span></h2><div class="progress"><i id="progBar"></i></div>
     <div class="form-content" id="formContent">
+      <details class="form-section" open>
+        <summary>Report</summary>
+        <div class="form-group"><label for="department">Your department</label>
+          <select id="department"><option value="Department of Computer Science & Engineering">Computer Science &amp; Engineering</option>
+<option value="Department of Electrical & Electronic Engineering">Electrical &amp; Electronic Engineering</option>
+<option value="Department of Business Administration">Business Administration</option>
+<option value="Department of Law">Law</option>
+<option value="Department of English">English</option>
+<option value="Department of Economics">Economics</option>
+<option value="Department of Civil Engineering">Civil Engineering</option>
+<option value="Other">Other (type below)</option></select>
+          <input type="text" id="department-other" class="other-input" placeholder="e.g., Physics"></div>
+        <div class="form-group"><label for="reportType">Report type</label>
+          <select id="reportType"><option>Assignment</option><option>Lab Report</option><option>Project</option><option>Term Paper</option><option>Thesis Paper</option></select></div>
+        <div class="row2">
+          <div class="form-group"><label for="reportNumber">Number <span class="opt">optional</span></label><input type="text" id="reportNumber" placeholder="I, II, 1, 2"></div>
+          <div class="form-group"><label for="reportTitle">Title <span class="opt">optional</span></label><input type="text" id="reportTitle" placeholder="Cover Page Maker"></div>
+        </div>
+      </details>
 
-      <div class="form-section">
-        <div class="form-section-title"><i class="fas fa-university"></i> Department &amp; Report</div>
-        <div class="form-group">
-          <label for="department">Your Department</label>
-          <select id="department">
-            <option value="Department of Computer Science & Engineering">Computer Science &amp; Engineering</option>
-            <option value="Department of Electrical & Electronic Engineering">Electrical &amp; Electronic Engineering</option>
-            <option value="Department of Business Administration">Business Administration</option>
-            <option value="Department of Law">Law</option>
-            <option value="Department of English">English</option>
-            <option value="Department of Economics">Economics</option>
-            <option value="Department of Civil Engineering">Civil Engineering</option>
-            <option value="Other">Other (Enter below)</option>
-          </select>
-          <input type="text" id="department-other" class="other-input" placeholder="e.g., Physics">
+      <details class="form-section" open>
+        <summary>Course</summary>
+        <div class="row2">
+          <div class="form-group"><label for="courseTitle">Course title</label><input type="text" id="courseTitle" placeholder="Calculus I"></div>
+          <div class="form-group"><label for="courseCode">Course code</label><input type="text" id="courseCode" placeholder="MAT123"></div>
         </div>
-        <div class="form-group">
-          <label for="reportType">Report Type</label>
-          <select id="reportType">
-            <option>Assignment</option><option>Lab Report</option><option>Project</option><option>Term Paper</option><option>Thesis Paper</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="reportNumber">Report Number <span class="opt">(Optional)</span></label>
-          <input type="text" id="reportNumber" placeholder="e.g., I, II, 1, 2">
-        </div>
-        <div class="form-group">
-          <label for="reportTitle">Report Title <span class="opt">(Optional)</span></label>
-          <input type="text" id="reportTitle" placeholder="Design and Implementation of Cover Page Maker">
-        </div>
-      </div>
+      </details>
 
-      <div class="form-section">
-        <div class="form-section-title"><i class="fas fa-book"></i> Course Details</div>
-        <div class="form-group"><label for="courseTitle">Course Title</label><input type="text" id="courseTitle" placeholder="Calculus I"></div>
-        <div class="form-group"><label for="courseCode">Course Code</label><input type="text" id="courseCode" placeholder="MAT123"></div>
-      </div>
-
-      <div class="form-section">
-        <div class="form-section-title"><i class="fas fa-chalkboard-user"></i> Teacher Info</div>
-        <div class="form-group"><label for="teacherName">Teacher Name</label><input type="text" id="teacherName" placeholder="Nafia Mollik"></div>
-        <div class="form-group">
-          <label for="teacherDept">Teacher's Department</label>
-          <select id="teacherDept">
-            <option value="">Same as my department</option>
-            <option value="Department of Computer Science & Engineering">Computer Science &amp; Engineering</option>
-            <option value="Department of Electrical & Electronic Engineering">Electrical &amp; Electronic Engineering</option>
-            <option value="Department of Business Administration">Business Administration</option>
-            <option value="Department of Law">Law</option>
-            <option value="Department of English">English</option>
-            <option value="Department of Economics">Economics</option>
-            <option value="Department of Civil Engineering">Civil Engineering</option>
-            <option value="Other">Other (Enter below)</option>
-          </select>
+      <details class="form-section" open>
+        <summary>Teacher</summary>
+        <div class="form-group"><label for="teacherName">Name</label><input type="text" id="teacherName" placeholder="Nafia Mollik"></div>
+        <div class="form-group"><label for="designation">Designation</label>
+          <select id="designation"><option>Lecturer</option><option>Senior Lecturer</option><option>Assistant Professor</option><option>Associate Professor</option><option>Professor</option><option value="Other">Other (type below)</option></select>
+          <input type="text" id="designation-other" class="other-input" placeholder="Enter designation"></div>
+        <div class="form-group"><label for="teacherDept">Department</label>
+          <select id="teacherDept"><option value="">Same as mine</option><option value="Department of Computer Science & Engineering">Computer Science &amp; Engineering</option>
+<option value="Department of Electrical & Electronic Engineering">Electrical &amp; Electronic Engineering</option>
+<option value="Department of Business Administration">Business Administration</option>
+<option value="Department of Law">Law</option>
+<option value="Department of English">English</option>
+<option value="Department of Economics">Economics</option>
+<option value="Department of Civil Engineering">Civil Engineering</option>
+<option value="Other">Other (type below)</option></select>
           <input type="text" id="teacherDept-other" class="other-input" placeholder="e.g., Physics">
-          <small class="hint">&ldquo;Department of&rdquo; is added automatically for custom names.</small>
-        </div>
-        <div class="form-group">
-          <label for="designation">Designation</label>
-          <select id="designation">
-            <option>Lecturer</option><option>Senior Lecturer</option><option>Assistant Professor</option>
-            <option>Associate Professor</option><option>Professor</option><option value="Other">Other (Specify below)</option>
-          </select>
-          <input type="text" id="designation-other" class="other-input" placeholder="Enter other designation">
-        </div>
-      </div>
+          <small class="hint">&ldquo;Department of&rdquo; is added for you.</small></div>
+      </details>
 
-      <div class="form-section">
-        <div class="form-section-title"><i class="fas fa-user-graduate"></i> Student Info</div>
-        <div class="form-group">
-          <label class="checkbox-group"><input type="checkbox" id="isGroupReport"> Group Report</label>
-        </div>
+      <details class="form-section" open>
+        <summary>Student</summary>
+        <div class="form-group"><label class="checkbox-group"><input type="checkbox" id="isGroupReport"> This is a group report</label></div>
         <div id="individualSection">
-          <div class="form-group"><label for="studentName">Student Name</label><input type="text" id="studentName" placeholder="MHB"></div>
-          <div class="form-group"><label for="studentID">Student ID</label><input type="text" id="studentID" placeholder="252***038"></div>
-          <div class="form-group"><label for="section">Section</label><input type="text" id="section" placeholder="03"></div>
-        </div>
-        <div id="groupSection" hidden>
-          <div class="form-group">
-            <label for="groupMembers">Team Members <span class="opt">(One per line: Name, ID, Section)</span></label>
-            <textarea id="groupMembers" rows="5" placeholder="MHB, 252***038, 03"></textarea>
+          <div class="form-group"><label for="studentName">Name</label><input type="text" id="studentName" placeholder="MHB"></div>
+          <div class="row2">
+            <div class="form-group"><label for="studentID">Student ID</label><input type="text" id="studentID" placeholder="252***038"></div>
+            <div class="form-group"><label for="section">Section</label><input type="text" id="section" placeholder="03"></div>
           </div>
         </div>
-      </div>
+        <div id="groupSection" hidden>
+          <div class="form-group"><label for="groupMembers">Team members <span class="opt">one per line: name, ID, section</span></label>
+            <textarea id="groupMembers" rows="5" placeholder="MHB, 252***038, 03"></textarea></div>
+        </div>
+      </details>
 
-      <div class="form-section">
-        <div class="form-section-title"><i class="fas fa-calendar-check"></i> Submission</div>
-        <div class="form-group"><label for="submissionDate">Date of Submission</label><input type="date" id="submissionDate"></div>
-      </div>
-    </div>
-
-    <div class="scroll-indicator" id="scrollIndicator"><span>Scroll Down</span><i class="fas fa-chevron-down"></i></div>
-    <div class="btn-group">
-      <button class="btn btn-print" id="printBtn"><i class="fas fa-print"></i> Print Cover Page</button>
-      <button class="btn btn-reset" id="resetBtn"><i class="fas fa-rotate-left"></i> Reset</button>
+      <details class="form-section" open>
+        <summary>Submission</summary>
+        <div class="form-group"><label for="submissionDate">Date <span class="opt">defaults to today</span></label><input type="date" id="submissionDate"></div>
+      </details>
     </div>
   </div>
 
   <div class="preview-col">
     <div class="preview-bar">
-      <div class="seg" role="group" aria-label="Cover template" >
+      <div class="seg" role="group" aria-label="Cover template">
         <button type="button" class="seg-btn active" data-tpl="classic">Classic</button>
         <button type="button" class="seg-btn" data-tpl="frame">Frame</button>
       </div>
+      <label class="inline-field" id="borderField">Border
+        <select id="borderSelect">
+          <option value="border-solid-black">Solid</option><option value="border-double-black">Double</option><option value="border-dotted-black">Dotted</option>
+          <option value="border-dashed-black">Dashed</option><option value="border-groove-black">Groove</option><option value="border-ridge-black">Ridge</option><option value="border-none">None</option>
+        </select></label>
+      <span class="spacer"></span>
+      <button class="btn btn-reset" id="resetBtn" type="button">Clear</button>
+      <button class="btn btn-print" id="printBtn" type="button"><i class="fas fa-print"></i> Print cover page</button>
     </div>
-    <div class="preview-stage" id="previewStage"><div class="sheet-scaler" id="sheetScaler">
+    <div class="desk">
+      <p class="desk-label">Live Preview &middot; updates as you type</p>
+      <div class="preview-stage" id="previewStage"><div class="sheet-scaler" id="sheetScaler">
   <div class="page-container border-solid-black" id="coverPage">
-    <div class="preview-label">Print Preview</div>
-    <button class="border-floating-btn" id="borderToggleBtn" aria-label="Border style"><i class="fas fa-paint-brush"></i></button>
-    <div class="border-panel" id="borderPanel">
-      <h4>Cover Border Style</h4>
-      <div class="border-buttons">
-        <button type="button" class="border-btn active" data-border="border-solid-black">Solid</button>
-        <button type="button" class="border-btn" data-border="border-double-black">Double</button>
-        <button type="button" class="border-btn" data-border="border-dotted-black">Dotted</button>
-        <button type="button" class="border-btn" data-border="border-dashed-black">Dashed</button>
-        <button type="button" class="border-btn" data-border="border-groove-black">Groove</button>
-        <button type="button" class="border-btn" data-border="border-ridge-black">Ridge</button>
-        <button type="button" class="border-btn" data-border="border-none">No border</button>
-      </div>
-    </div>
-
     <div class="logo-area"><img src="pu_logo.png" alt="Presidency University Logo" class="university-logo"></div>
     <h1 class="university-name">Presidency University</h1>
     <p class="department" id="pDepartment"></p>
-
     <div class="assignment-info">
       <h2 class="assignment-title" id="pReportType">Assignment</h2>
       <p id="pReportTitle"></p>
       <p>Course Title: <b id="pCourseTitle"></b></p>
       <p>Course Code: <b id="pCourseCode"></b></p>
     </div>
-
     <div class="submission-section">
       <h3 class="section-heading">Submitted to:</h3>
-      <p><b id="pTeacherName"></b></p>
-      <p id="pDesignation"></p>
-      <p id="pSubmittedDepartment"></p>
-      <p>Presidency University</p>
+      <p><b id="pTeacherName"></b></p><p id="pDesignation"></p><p id="pSubmittedDepartment"></p><p>Presidency University</p>
     </div>
-
-    <div class="submission-section">
-      <h3 class="section-heading">Submitted by:</h3>
-      <div id="pSubmittedByContent"></div>
-    </div>
-
+    <div class="submission-section"><h3 class="section-heading">Submitted by:</h3><div id="pSubmittedByContent"></div></div>
     <p class="submission-date">Date of Submission: <b id="pDate"></b></p>
   </div>
-
-  <!-- Template 2: Frame (A4, black & white) -->
   <div class="tpl-sheet" id="tplSheet" hidden>
     <div class="tpl-frame"></div>
     <img class="tpl-emblem" src="emblem.png" alt="Presidency University Logo">
@@ -215,60 +152,48 @@
     <p class="tpl-dept" id="tDept"></p>
     <h1 class="tpl-title"><div class="t1" id="tType"></div><div class="t2" id="tNum"></div></h1>
     <p class="tpl-sub" id="tSub"></p>
-    <table class="tpl-info">
-      <colgroup><col style="width:36mm"><col style="width:32mm"><col style="width:76.3mm"></colgroup>
-      <tbody id="tBody"></tbody>
-    </table>
+    <table class="tpl-info"><colgroup><col style="width:36mm"><col style="width:32mm"><col style="width:76.3mm"></colgroup><tbody id="tBody"></tbody></table>
   </div>
-    </div></div>
+      </div></div>
+    </div>
   </div>
 </section>
 
-<!-- ===================== TOOL 2: CGPA CALCULATOR ===================== -->
 <section id="tool-cgpa" class="tool calculator-container" hidden>
-  <h2 class="calculator-title"><i class="fas fa-graduation-cap"></i> CGPA Calculator</h2>
-  <p class="calculator-subtitle">Calculate your semester GPA and cumulative CGPA</p>
-  <div class="calculator-content">
-    <div class="calculator-inputs">
-      <div class="input-group-calc">
-        <label for="numCourses">Number of Courses</label>
-        <input type="number" id="numCourses" min="1" max="12" value="5">
-      </div>
-      <div id="courses-container" class="courses-list"></div>
+  <div class="calc-main">
+    <h2>CGPA calculator</h2>
+    <p class="calculator-subtitle">Add your courses and pick a grade for each. Your GPA updates as you go.</p>
+    <div class="course-head"><span>Course</span><span>Credits</span><span>Grade</span><span></span></div>
+    <div id="courses-container" class="courses-list"></div>
+    <button type="button" class="btn btn-reset add-btn" id="addCourseBtn">+ Add course</button>
 
-      <label class="checkbox-group"><input type="checkbox" id="includePreviousCGPA"> Include previous CGPA for cumulative calculation</label>
-      <div id="previousCGPASection" hidden>
-        <div class="input-group-calc"><label for="prevCredits">Previous Credits Completed</label>
-          <input type="number" id="prevCredits" placeholder="Total credits completed" step="0.5" min="0"></div>
-        <div class="input-group-calc"><label for="prevCGPA">Previous CGPA</label>
-          <input type="number" id="prevCGPA" placeholder="Your current CGPA" step="0.01" min="0" max="4"></div>
-      </div>
-
-      <div class="btn-group-calc">
-        <button class="calc-btn" id="calcBtn"><i class="fas fa-calculator"></i> Calculate GPA</button>
-        <button class="calc-btn reset-btn" id="cgpaResetBtn"><i class="fas fa-redo"></i> Reset</button>
-      </div>
-      <div class="info-footer"><i class="fas fa-info-circle"></i> According to University guidelines</div>
+    <label class="checkbox-group prev-toggle"><input type="checkbox" id="includePreviousCGPA"> Include my earlier semesters</label>
+    <div id="previousCGPASection" class="row2" hidden>
+      <div class="form-group"><label for="prevCredits">Credits completed</label><input type="number" id="prevCredits" placeholder="e.g., 45" step="0.5" min="0"></div>
+      <div class="form-group"><label for="prevCGPA">Current CGPA</label><input type="number" id="prevCGPA" placeholder="e.g., 3.42" step="0.01" min="0" max="4"></div>
     </div>
-
-    <div class="calculator-results">
-      <div class="results-header">
-        <h3>Results</h3>
-        <div class="total-amount"><div>Semester GPA</div><div class="amount" id="semesterGPA">0.00</div></div>
-      </div>
-      <div id="gpaCircle">-</div>
-      <div id="cgpaResult"><div class="empty-state"><i class="fas fa-graduation-cap"></i><p>Enter your course details to calculate GPA</p></div></div>
-      <div id="cumulativeResult" hidden><h4>Cumulative CGPA</h4><div id="cumulativeCGPA">0.00</div></div>
-      <button class="calc-btn" id="copyBtn"><i class="fas fa-copy"></i> Copy Results</button>
-    </div>
+    <details class="scale"><summary>Grading scale</summary><p id="scaleList"></p></details>
   </div>
+  <aside class="calc-results">
+    <div class="results-label">Semester GPA</div>
+    <div class="ring"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="trk" cx="60" cy="60" r="52"/><circle class="val" id="ringVal" cx="60" cy="60" r="52"/></svg><div id="gpaCircle">&ndash;</div></div>
+    <div id="cgpaResult"><p class="empty-state">Pick a grade for at least one course to see your GPA.</p></div>
+    <div id="cumulativeResult" hidden><div class="results-label">New cumulative CGPA</div><div id="cumulativeCGPA">0.00</div></div>
+    <div class="btn-group-calc">
+      <button class="btn" id="copyBtn" type="button">Copy results</button>
+      <button class="btn btn-reset" id="cgpaResetBtn" type="button">Reset</button>
+    </div>
+  </aside>
 </section>
 </main>
 
-<footer>
-  &copy; <script>document.write(new Date().getFullYear())</script> All Rights Reserved &mdash;
-  <a href="https://www.facebook.com/hey.mhb" target="_blank" rel="noopener">Mahmudul H. Bappy</a>
-</footer>
+<div class="mobile-bar" id="mobileBar">
+  <div class="seg"><button type="button" class="seg-btn active" data-pane-btn="edit">Edit</button><button type="button" class="seg-btn" data-pane-btn="preview">Preview</button></div>
+  <button class="btn btn-print" id="printBtn2" type="button">Print</button>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<footer>&copy; <script>document.write(new Date().getFullYear())</script> All Rights Reserved &mdash; <a href="https://www.facebook.com/hey.mhb" target="_blank" rel="noopener">Mahmudul H. Bappy</a></footer>
 
 <!-- ===================== ADMIN (students only) ===================== -->
 <div id="admin-panel-overlay">
