@@ -37,8 +37,9 @@
   function showTool(tool) {
     if (!TOOLS.includes(tool)) tool = 'cover';
     TOOLS.forEach((t) => { $('tool-' + t).hidden = t !== tool; });
-    document.querySelectorAll('.nav-item').forEach((li) => li.classList.toggle('active', li.dataset.tool === tool));
-    closeNav();
+    document.querySelectorAll('.side-item').forEach((li) => { li.classList.toggle('active', li.dataset.tool === tool); li.setAttribute('aria-selected', li.dataset.tool === tool); });
+    const nm = tool === 'cgpa' ? 'CGPA calculator' : 'Cover page'; document.title = nm + ' | PUCOP Tools'; $('topTitle').textContent = nm; document.body.classList.remove('nav-open', 'side-open');
+    $('mobileBar').hidden = tool !== 'cover'; layoutMotion();
     if (tool === 'cover') fitPreview();
   }
   function route() {
@@ -46,16 +47,49 @@
     if (h === 'admin') return openAdmin();
     showTool(h);
   }
-  function closeNav() {
-    $('hamburgerBtn').classList.remove('active'); $('headerNav').classList.remove('nav-open'); $('navOverlay').classList.remove('active');
+  function setPane(p) {
+    $('tool-cover').dataset.pane = p;
+    document.querySelectorAll('[data-pane-btn]').forEach((b) => b.classList.toggle('active', b.dataset.paneBtn === p));
+    if (p === 'preview') fitPreview(); layoutMotion();
+    window.scrollTo({ top: 0 });
   }
   function initNav() {
-    on('hamburgerBtn', 'click', () => {
-      const open = $('headerNav').classList.toggle('nav-open');
-      $('hamburgerBtn').classList.toggle('active', open); $('navOverlay').classList.toggle('active', open);
-    });
-    on('navOverlay', 'click', closeNav);
     window.addEventListener('hashchange', route);
+    const sb = $('sidebar'); let st;
+    const openSide = () => { clearTimeout(st); if (innerWidth > 1000) document.body.classList.add('side-open'); };
+    const shutSide = () => { clearTimeout(st); st = setTimeout(() => document.body.classList.remove('side-open'), 220); };
+    sb.addEventListener('mouseenter', openSide); sb.addEventListener('mouseleave', shutSide);
+    sb.addEventListener('focusin', openSide); sb.addEventListener('focusout', (e) => { if (!sb.contains(e.relatedTarget)) shutSide(); });
+    on('menuBtn', 'click', () => document.body.classList.add('nav-open'));
+    on('sideScrim', 'click', () => document.body.classList.remove('nav-open'));
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.body.classList.remove('nav-open'); });
+    if (window.ResizeObserver) new ResizeObserver(() => fitPreview()).observe($('previewStage'));
+    $('headerNav').addEventListener('keydown', (e) => {
+      const i = TOOLS.indexOf(location.hash.replace('#', '')) < 0 ? 0 : TOOLS.indexOf(location.hash.replace('#', ''));
+      const d = (e.key === 'ArrowDown' || e.key === 'ArrowRight') ? 1 : (e.key === 'ArrowUp' || e.key === 'ArrowLeft') ? -1 : 0; if (!d) return; e.preventDefault();
+      const n = (i + d + TOOLS.length) % TOOLS.length; location.hash = TOOLS[n]; document.querySelector(`.side-item[data-tool="${TOOLS[n]}"]`).focus();
+    });
+    document.querySelectorAll('[data-pane-btn]').forEach((b) => b.addEventListener('click', () => setPane(b.dataset.paneBtn)));
+  }
+  let ft;
+  function flash(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(ft); ft = setTimeout(() => t.classList.remove('show'), 2600); }
+  const DRAFT = 'pucop-draft';
+  const FIELDS = '.form-container input, .form-container select, .form-container textarea';
+  function saveDraft() {
+    try {
+      const d = {};
+      document.querySelectorAll(FIELDS).forEach((el) => { if (el.id && el.id !== 'submissionDate') d[el.id] = el.type === 'checkbox' ? el.checked : el.value; });
+      d._border = $('borderSelect').value;
+      localStorage.setItem(DRAFT, JSON.stringify(d));
+    } catch (e) { /* storage may be blocked */ }
+  }
+  function loadDraft() {
+    try {
+      const d = JSON.parse(localStorage.getItem(DRAFT) || 'null'); if (!d) return;
+      Object.entries(d).forEach(([id, v]) => { const el = id[0] === '_' ? null : $(id); if (!el) return; if (el.type === 'checkbox') el.checked = v; else el.value = v; });
+      if (d._border) setBorder(d._border);
+      $('individualSection').hidden = $('isGroupReport').checked; $('groupSection').hidden = !$('isGroupReport').checked;
+    } catch (e) { /* ignore */ }
   }
 
   /* ---------- 4. Cover page maker ---------- */
@@ -115,10 +149,10 @@
 
   function setTemplate(t) {
     const frame = t === 'frame';
-    $('coverPage').hidden = frame; $('tplSheet').hidden = !frame;
-    document.querySelectorAll('.seg-btn').forEach((b) => b.classList.toggle('active', b.dataset.tpl === t));
+    $('coverPage').hidden = frame; $('borderField').hidden = frame; $('tplSheet').hidden = !frame;
+    document.querySelectorAll('[data-tpl]').forEach((b) => b.classList.toggle('active', b.dataset.tpl === t));
     try { localStorage.setItem('pucop-tpl', t); } catch (e) { /* storage may be blocked */ }
-    fitPreview();
+    fitPreview(); layoutMotion();
   }
 
   // Scale the fixed-size A4 sheet down to fit narrow screens.
@@ -138,7 +172,43 @@
     });
   }
 
+  let hlOn = false;
   function updateCover() {
+    const els = [...document.querySelectorAll('#coverPage [id], #tplSheet [id]')].filter((e) => e.id !== 'tBody');
+    const before = els.map((e) => e.textContent);
+    renderCover();
+    if (hlOn) els.forEach((e, i) => { if (e.textContent !== before[i]) { e.classList.remove('hl'); void e.offsetWidth; e.classList.add('hl'); } });
+    updateProgress();
+  }
+  function updateProgress() {
+    const g = $('isGroupReport').checked;
+    const ids = ['courseTitle', 'courseCode', 'teacherName'].concat(g ? [] : ['studentName', 'studentID', 'section']);
+    let done = ids.filter((i) => $(i).value.trim()).length, total = ids.length;
+    if (g) { total++; if (parseMembers().length) done++; }
+    const ok = done === total;
+    $('progBar').style.width = (done / total * 100) + '%';
+    $('progText').textContent = ok ? 'Ready to print' : done + ' of ' + total + ' required';
+    $('progText').classList.toggle('ok', ok);
+    $('tabCoverMeta').textContent = done ? (ok ? 'Ready' : done + '/' + total) : ''; $('tabCoverMeta').classList.toggle('ok', ok);
+    ['printBtn', 'printBtn2'].forEach((i) => $(i).classList.toggle('ready', ok));
+  }
+  function layoutMotion() {
+    document.querySelectorAll('.seg').forEach((s) => {
+      const a = s.querySelector('.active'); if (!a || !a.offsetWidth) return;
+      s.style.setProperty('--x', a.offsetLeft + 'px'); s.style.setProperty('--w', a.offsetWidth + 'px');
+    });
+    const n = document.querySelector('.side-item.active'), nav = $('headerNav') || document.querySelector('.header-nav');
+    if (n && nav) { nav.style.setProperty('--iy', (n.offsetTop - 8) + 'px'); nav.style.setProperty('--ih', n.offsetHeight + 'px'); }
+  }
+  let tw;
+  function tween(el, to) {
+    cancelAnimationFrame(tw);
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { el.textContent = to.toFixed(2); return; }
+    const from = parseFloat(el.textContent) || 0, t0 = performance.now();
+    const step = (t) => { const k = Math.min(1, (t - t0) / 700), e = 1 - Math.pow(1 - k, 3); el.textContent = (from + (to - from) * e).toFixed(2); if (k < 1) tw = requestAnimationFrame(step); };
+    tw = requestAnimationFrame(step);
+  }
+  function renderCover() {
     const dept = pick('department', 'Department of Computer Science & Engineering');
     const num = $('reportNumber').value.trim(), title = $('reportTitle').value.trim();
     $('pReportType').textContent = $('reportType').value + (num ? ' - ' + num : '');
@@ -165,22 +235,24 @@
   }
 
   function validateCover() {
+    document.querySelectorAll('#tool-cover .err').forEach((e) => e.remove());
     document.querySelectorAll('#tool-cover .invalid').forEach((el) => el.classList.remove('invalid'));
-    const errors = [];
-    const need = (id, msg) => { const el = $(id); if (!el.value.trim()) { errors.push(msg); el.classList.add('invalid'); } };
-    if ($('department').value === 'Other') need('department-other', 'Please specify other department');
-    need('courseTitle', 'Please enter course title');
-    need('courseCode', 'Please enter course code');
-    need('teacherName', 'Please enter teacher name');
-    if ($('teacherDept').value === 'Other') need('teacherDept-other', "Please specify teacher's department");
-    if ($('designation').value === 'Other') need('designation-other', 'Please specify other designation');
-    if ($('isGroupReport').checked) {
-      if (!parseMembers().length) { errors.push('Please add at least one team member'); $('groupMembers').classList.add('invalid'); }
-    } else {
-      need('studentName', 'Please enter student name'); need('studentID', 'Please enter student ID'); need('section', 'Please enter section');
+    let first = null, count = 0;
+    const flag = (el, msg) => { count++; el.classList.add('invalid'); el.insertAdjacentHTML('afterend', `<small class="err">${msg}</small>`); first = first || el; };
+    const need = (id, msg) => { if (!$(id).value.trim()) flag($(id), msg); };
+    if ($('department').value === 'Other') need('department-other', 'Type your department');
+    need('courseTitle', 'Add the course title'); need('courseCode', 'Add the course code');
+    need('teacherName', "Add your teacher's name");
+    if ($('teacherDept').value === 'Other') need('teacherDept-other', "Type the teacher's department");
+    if ($('designation').value === 'Other') need('designation-other', 'Type the designation');
+    if ($('isGroupReport').checked) { if (!parseMembers().length) flag($('groupMembers'), 'Add at least one team member'); }
+    else { need('studentName', 'Add your name'); need('studentID', 'Add your student ID'); need('section', 'Add your section'); }
+    if (count) {
+      const d = first.closest('details'); if (d) d.open = true;
+      setPane('edit'); first.scrollIntoView({ block: 'center', behavior: 'smooth' }); first.focus({ preventScroll: true });
+      flash(count + (count > 1 ? ' fields need' : ' field needs') + ' your attention');
     }
-    if (errors.length) alert('Please fix the following errors:\n- ' + errors.join('\n- '));
-    return !errors.length;
+    return !count;
   }
 
   // Anonymous print counter (feeds the admin "Students" tab).
@@ -197,8 +269,7 @@
   function printCover() { if (validateCover()) { trackPrint(); window.print(); } }
 
   function setBorder(cls) {
-    $('coverPage').classList.remove(...BORDERS); $('coverPage').classList.add(cls);
-    document.querySelectorAll('.border-btn').forEach((b) => b.classList.toggle('active', b.dataset.border === cls));
+    $('coverPage').classList.remove(...BORDERS); $('coverPage').classList.add(cls); $('borderSelect').value = cls;
   }
 
   function resetCover() {
@@ -206,7 +277,8 @@
     document.querySelectorAll('#tool-cover select').forEach((s) => { s.selectedIndex = 0; });
     $('isGroupReport').checked = false; toggleGroup();
     document.querySelectorAll('#tool-cover .invalid').forEach((el) => el.classList.remove('invalid'));
-    setBorder('border-solid-black'); updateCover();
+    setBorder('border-solid-black'); try { localStorage.removeItem(DRAFT); } catch (e) { /* ignore */ }
+    document.querySelectorAll('#tool-cover .err').forEach((e) => e.remove()); updateCover();
   }
 
   function toggleGroup() {
@@ -215,76 +287,68 @@
   }
 
   function initCover() {
-    document.querySelectorAll('.form-container input, .form-container select, .form-container textarea').forEach((c) => {
-      c.addEventListener('input', updateCover); c.addEventListener('change', updateCover);
+    document.querySelectorAll(FIELDS).forEach((c) => {
+      const h = () => { c.classList.remove('invalid'); const n = c.nextElementSibling; if (n && n.classList.contains('err')) n.remove(); updateCover(); saveDraft(); };
+      c.addEventListener('input', h); c.addEventListener('change', h);
     });
     on('isGroupReport', 'change', toggleGroup);
-    on('printBtn', 'click', printCover); on('resetBtn', 'click', resetCover);
-    document.querySelectorAll('.border-btn').forEach((b) => b.addEventListener('click', (e) => { e.stopPropagation(); setBorder(b.dataset.border); }));
-    on('borderToggleBtn', 'click', (e) => { e.stopPropagation(); $('borderPanel').classList.toggle('show'); });
-    document.addEventListener('click', (e) => { if (!$('borderPanel').contains(e.target)) $('borderPanel').classList.remove('show'); });
-
-    const fc = $('formContent'), si = $('scrollIndicator');
-    fc.addEventListener('scroll', () => si.classList.toggle('hidden', fc.scrollTop > 50));
-    si.addEventListener('click', () => fc.scrollBy({ top: 200, behavior: 'smooth' }));
-    document.querySelectorAll('.seg-btn').forEach((b) => b.addEventListener('click', () => setTemplate(b.dataset.tpl)));
-    window.addEventListener('resize', fitPreview);
-    updateCover();
+    on('printBtn', 'click', printCover); on('printBtn2', 'click', printCover);
+    on('resetBtn', 'click', () => { if (confirm('Clear every field?')) resetCover(); });
+    on('borderSelect', 'change', (e) => { setBorder(e.target.value); saveDraft(); });
+    document.querySelectorAll('[data-tpl]').forEach((b) => b.addEventListener('click', () => setTemplate(b.dataset.tpl)));
+    window.addEventListener('resize', () => { fitPreview(); layoutMotion(); });
+    loadDraft(); updateCover();
     let saved = 'classic';
     try { saved = localStorage.getItem('pucop-tpl') || 'classic'; } catch (e) { /* ignore */ }
-    setTemplate(saved === 'frame' ? 'frame' : 'classic');
+    setTemplate(saved === 'frame' ? 'frame' : 'classic'); hlOn = true;
   }
 
   /* ---------- 5. CGPA calculator ---------- */
-  function buildCourses() {
-    const n = Math.min(12, Math.max(1, parseInt($('numCourses').value) || 5));
-    const opts = GRADES.map(([l, p]) => `<option value="${p}">${l} (${p.toFixed(2)})</option>`).join('');
-    let html = '';
-    for (let i = 1; i <= n; i++) {
-      html += `<div class="course-row"><input type="text" class="course-name" value="Course ${i}">` +
-        `<input type="number" class="course-credits" step="0.5" min="0" max="4" value="3"><select class="grade-select">${opts}</select></div>`;
-    }
-    $('courses-container').innerHTML = html;
+  const gradeOpts = '<option value="">Grade</option>' + GRADES.map(([l, p]) => `<option value="${p}">${l} (${p.toFixed(2)})</option>`).join('');
+  function addCourse() {
+    const row = document.createElement('div'); row.className = 'course-row';
+    row.innerHTML = `<input type="text" class="course-name" aria-label="Course name" placeholder="Course ${$('courses-container').children.length + 1}">` +
+      `<input type="number" class="course-credits" aria-label="Credits" step="0.5" min="0" max="6" value="3"><select class="grade-select" aria-label="Grade">${gradeOpts}</select>` +
+      '<button type="button" class="icon-btn" aria-label="Remove course">&times;</button>';
+    $('courses-container').appendChild(row); return row;
   }
-
   function calcCGPA() {
     let points = 0, credits = 0;
     document.querySelectorAll('.course-row').forEach((r) => {
-      const c = parseFloat(r.querySelector('.course-credits').value) || 0;
-      points += c * parseFloat(r.querySelector('.grade-select').value);
-      credits += c;
+      const c = parseFloat(r.querySelector('.course-credits').value) || 0, g = parseFloat(r.querySelector('.grade-select').value);
+      if (c > 0 && !isNaN(g)) { points += c * g; credits += c; }
     });
-    if (!credits) return alert('Please enter valid credit hours');
-    const gpa = points / credits;
-    $('semesterGPA').textContent = gpa.toFixed(2); $('gpaCircle').textContent = gpa.toFixed(2);
-    $('cgpaResult').innerHTML = `<div class="result-card"><b>Grade Summary</b><div>Total Credits: <strong>${credits}</strong></div>` +
-      `<div>Total Grade Points: <strong>${points.toFixed(2)}</strong></div><div>Semester GPA: <strong>${gpa.toFixed(2)}</strong></div></div>`;
-
     const pc = parseFloat($('prevCredits').value) || 0, pg = parseFloat($('prevCGPA').value) || 0;
+    if (!credits) {
+      $('tabCgpaMeta').textContent = ''; cancelAnimationFrame(tw); $('gpaCircle').textContent = '\u2013'; $('ringVal').style.strokeDashoffset = 326.7; $('cumulativeResult').hidden = true;
+      $('cgpaResult').innerHTML = '<p class="empty-state">Pick a grade for at least one course to see your GPA.</p>'; return;
+    }
+    const gpa = points / credits;
+    $('tabCgpaMeta').textContent = gpa.toFixed(2); tween($('gpaCircle'), gpa); $('ringVal').style.strokeDashoffset = 326.7 * (1 - Math.min(gpa, 4) / 4);
+    $('cgpaResult').innerHTML = `<dl><dt>Credits counted</dt><dd>${credits}</dd><dt>Grade points</dt><dd>${points.toFixed(2)}</dd></dl>`;
     const show = $('includePreviousCGPA').checked && pc > 0 && pg > 0;
     $('cumulativeResult').hidden = !show;
-    if (show) $('cumulativeCGPA').textContent = ((pg * pc + points) / (pc + credits)).toFixed(2);
+    if (show) tween($('cumulativeCGPA'), (pg * pc + points) / (pc + credits));
   }
-
   function resetCGPA() {
-    $('numCourses').value = 5; $('includePreviousCGPA').checked = false; $('previousCGPASection').hidden = true;
-    $('prevCredits').value = ''; $('prevCGPA').value = '';
-    buildCourses();
-    $('semesterGPA').textContent = '0.00'; $('gpaCircle').textContent = '-'; $('cumulativeResult').hidden = true;
-    $('cgpaResult').innerHTML = '<div class="empty-state"><i class="fas fa-graduation-cap"></i><p>Enter your course details to calculate GPA</p></div>';
+    $('courses-container').innerHTML = ''; for (let i = 0; i < 5; i++) addCourse().style.animationDelay = i * 60 + 'ms';
+    $('includePreviousCGPA').checked = false; $('previousCGPASection').hidden = true; $('prevCredits').value = ''; $('prevCGPA').value = '';
+    calcCGPA();
   }
-
   function copyResults() {
-    let text = 'Semester GPA: ' + $('semesterGPA').textContent;
+    if ($('gpaCircle').textContent.length > 1 === false) return flash('Add a grade first');
+    let text = 'Semester GPA: ' + $('gpaCircle').textContent;
     if (!$('cumulativeResult').hidden) text += '\nCumulative CGPA: ' + $('cumulativeCGPA').textContent;
-    navigator.clipboard.writeText(text).then(() => alert('Results copied!')).catch(() => alert('Failed to copy'));
+    navigator.clipboard.writeText(text).then(() => flash('Results copied')).catch(() => flash("Couldn't copy. Select the numbers instead."));
   }
-
   function initCGPA() {
-    on('numCourses', 'change', buildCourses);
-    on('includePreviousCGPA', 'change', () => { $('previousCGPASection').hidden = !$('includePreviousCGPA').checked; });
-    on('calcBtn', 'click', calcCGPA); on('cgpaResetBtn', 'click', resetCGPA); on('copyBtn', 'click', copyResults);
-    buildCourses();
+    $('scaleList').textContent = GRADES.map(([l, p]) => `${l} = ${p.toFixed(2)}`).join('  \u00b7  ');
+    on('includePreviousCGPA', 'change', () => { $('previousCGPASection').hidden = !$('includePreviousCGPA').checked; calcCGPA(); });
+    on('addCourseBtn', 'click', () => addCourse().querySelector('input').focus());
+    on('cgpaResetBtn', 'click', resetCGPA); on('copyBtn', 'click', copyResults);
+    $('tool-cgpa').addEventListener('input', calcCGPA); $('tool-cgpa').addEventListener('change', calcCGPA);
+    on('courses-container', 'click', (e) => { const b = e.target.closest('.icon-btn'); if (!b) return; if ($('courses-container').children.length > 1) { const r = b.parentNode; r.classList.add('leaving'); setTimeout(() => { r.remove(); calcCGPA(); }, 230); } else flash('Keep at least one course'); });
+    resetCGPA();
   }
 
   /* ---------- 6. Admin (students) ---------- */
@@ -404,7 +468,5 @@
   document.addEventListener('DOMContentLoaded', () => {
     initNav(); initCover(); initCGPA(); initAdmin(); route();
   });
-  window.addEventListener('load', () => { fitPreview(); setTimeout(() => {
-    const ls = $('loading-screen'); ls.style.opacity = '0'; setTimeout(() => { ls.style.display = 'none'; }, 500);
-  }, 1000); });
+  window.addEventListener('load', () => { fitPreview(); layoutMotion(); requestAnimationFrame(() => document.body.classList.remove('preload')); }); if (document.fonts) document.fonts.ready.then(layoutMotion);
 })();
